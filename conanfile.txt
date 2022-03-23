@@ -1,0 +1,7 @@
+[requires]
+gtest/cci.20210126
+wildcat-net/0.1.0@ross/stable
+openssl/3.0.2
+
+[generators]
+cmake
