@@ -416,7 +416,7 @@ namespace wildcat::ws {
         }
 
         /// Connects to the endpoint and initiates the web socket handshake
-        bool connect(const std::string &host, const std::string &port) {
+        bool connect(const std::string &host, std::uint16_t port) {
             try {
                 stream_->connect(host, port);
                 const auto hostName = hostName_.empty() ? host : hostName_;
