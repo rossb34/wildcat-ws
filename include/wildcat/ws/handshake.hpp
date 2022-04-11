@@ -13,7 +13,6 @@
 #include <poll.h>
 #include <openssl/sha.h>
 #include <wildcat/net/error.hpp>
-#include <wildcat/net/socket_stream.hpp>
 
 
 namespace wildcat::ws {
@@ -232,11 +231,12 @@ namespace wildcat::ws {
     }
 
     /// Manage the handshake process to upgrade the request
+    template<class SocketStream_T>
     class Handshaker {
     public:
 
         /// Initiates the handshake
-        static bool doHandshake(const std::string &host, const std::string &path, wildcat::net::SocketStream *stream) {
+        static bool doHandshake(const std::string &host, const std::string &path, SocketStream_T *stream) {
             const auto key = generateKey();
             const auto acceptKey = getAcceptKey(key);
             const auto upgrade = getUpgradeRequest(host, path, key);

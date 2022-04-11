@@ -8,7 +8,6 @@
 #include <functional>
 #include <memory>
 #include <byteswap.h>
-#include <wildcat/net/socket_stream.hpp>
 
 #include "handshake.hpp"
 
@@ -394,10 +393,11 @@ namespace wildcat::ws {
     };
 
     /// Web Socket Client
+    template<class SocketStream_T>
     class Client {
     public:
         /// Constructs a web socket Client from the specified socket stream
-        explicit Client(std::unique_ptr<wildcat::net::SocketStream> stream)
+        explicit Client(std::unique_ptr<SocketStream_T> stream)
                 : stream_(std::move(stream)), hostName_(), path_(), offset_(0), rxBuf_(), txBuf_(), maskKeys_(4) {
             KeyGenerator generator;
             generator.fill(maskKeys_);
@@ -408,7 +408,7 @@ namespace wildcat::ws {
         /// \param stream TCP socket stream
         /// \param config configuration used for the handshake when sending the upgrade request. The configuration is
         /// useful when connecting through a proxy, e.g. stunnel.
-        Client(std::unique_ptr<wildcat::net::SocketStream> stream, const Config &config)
+        Client(std::unique_ptr<SocketStream_T> stream, const Config &config)
                 : stream_(std::move(stream)), hostName_(config.host), path_(config.path), offset_(0), rxBuf_(),
                   txBuf_(), maskKeys_(4) {
             KeyGenerator generator;
@@ -421,7 +421,7 @@ namespace wildcat::ws {
                 stream_->connect(host, port);
                 const auto hostName = hostName_.empty() ? host : hostName_;
                 const auto path = path_.empty() ? "" : path_;
-                Handshaker::doHandshake(hostName, path, stream_.get());
+                Handshaker<SocketStream_T>::doHandshake(hostName, path, stream_.get());
             } catch (const std::exception &e) {
                 throw;
             }
@@ -477,7 +477,7 @@ namespace wildcat::ws {
         }
 
     private:
-        std::unique_ptr<wildcat::net::SocketStream> stream_;
+        std::unique_ptr<SocketStream_T> stream_;
         std::string hostName_;
         std::string path_;
         std::size_t offset_;
