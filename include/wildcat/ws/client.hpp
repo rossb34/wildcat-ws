@@ -335,11 +335,13 @@ namespace wildcat::ws {
                 next_ += 4;
             }
             messageBegin_ = next_;
-            messageEnd_ = messageBegin_ + messageLength_;
 
-            isComplete_ = messageEnd_ <= bufferEnd_;
+            const auto bufferRemainingSize = bufferEnd_ - messageBegin_;
+            isComplete_ = messageLength_ <= bufferRemainingSize;
             if (!isComplete_)
                 return;
+
+            messageEnd_ = messageBegin_ + messageLength_;
 
             if (isMasked_) {
                 // unmask
@@ -441,16 +443,26 @@ namespace wildcat::ws {
             const auto bytesRead = stream_->recvBytes(reinterpret_cast<char *>(rxBuf_.data()) + offset_,
                                                       rxBuf_.size() - offset_);
             if (bytesRead > 0) {
+
                 const auto len = offset_ + bytesRead;
                 const auto pos = assembleFrame(rxBuf_.data(), len, f);
-                // check for partial frame at end of buffer
-                const auto remaining = len - pos;
-                if (remaining > 0) {
-                    std::memcpy(rxBuf_.data(), rxBuf_.data() + pos, remaining);
-                    offset_ = pos;
-                } else {
+
+                if (pos == 0) {
+                    // No complete frame could be assembled. Update the offset by the number of bytes read so we
+                    // effectively append the data to the buffer and try again to assemble a complete frame the next
+                    // time we poll the stream and receive data.
+                    offset_ += bytesRead;
+                } else if (pos == len) {
+                    // Complete frame(s) read with 0 remaining bytes
                     offset_ = 0;
+                } else {
+                    // At least 1 complete frame has been read with an incomplete frame at the end of the buffer. Copy
+                    // the remaining bytes to the beginning of the buffer and update the offset.
+                    const auto remaining = len - pos;
+                    std::memcpy(rxBuf_.data(), rxBuf_.data() + pos, remaining);
+                    offset_ = remaining;
                 }
+
                 return 1;
             }
             return 0;
@@ -481,7 +493,7 @@ namespace wildcat::ws {
         std::string hostName_;
         std::string path_;
         std::size_t offset_;
-        std::array<std::uint8_t, 1024 * 1024 * 4> rxBuf_;
+        std::array<std::uint8_t, 1024 * 1024 * 32> rxBuf_;
         std::array<std::uint8_t, 1024> txBuf_;
         std::vector<std::uint8_t> maskKeys_;
     };

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.17)
 project(wildcat_ws
-        VERSION 0.2.0
+        VERSION 0.2.1
         DESCRIPTION "Wildcat web socket library"
         )
 
