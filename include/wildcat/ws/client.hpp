@@ -488,6 +488,14 @@ namespace wildcat::ws {
             return bytesSent;
         }
 
+        /// Disconnects the underlying socket stream
+        void disconnect() {
+            // RFC 6455 states that in "normal" cases, the underlying TCP connection should be closed by the server. It
+            // is considered abnormal for the client to initiate the close. I think it should be ok to simply disconnect
+            // the underlying socket stream... I do not think I have to do the close handshake.
+            stream_->disconnect();
+        }
+
     private:
         std::unique_ptr<SocketStream_T> stream_;
         std::string hostName_;
